@@ -39,12 +39,12 @@ const SplashScreen = ({navigation,handleUserInfo,user_info}) => {
             }).then(function(value){
               console.log("result.data  ",value.data.username);
               handleUserInfo(value.data);
+              navigation.replace('BottomNav');
             })
             .catch(function(error){
               navigation.replace('Auth');
             });
               //console.log("res: ",res);
-            navigation.replace('BottomNav');
         }
         //navigation.replace(value === null ? 'Auth' : 'BottomNav');
       }

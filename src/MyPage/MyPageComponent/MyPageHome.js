@@ -21,7 +21,8 @@ function MyPageHome({navigation,user_info,user_email}) {
     // });
     console.log("user_name: ",user_info)
     const logOut = () => {
-        AsyncStorage.setItem('user_jwt',null);
+        AsyncStorage.clear();
+        // AsyncStorage.setItem('user_jwt',null);
         navigation.replace('Auth');
     }
     

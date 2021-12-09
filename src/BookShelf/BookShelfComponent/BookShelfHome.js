@@ -13,9 +13,13 @@ import {
 } from 'react-native';
 import { responsiveScreenFontSize, responsiveScreenHeight, responsiveScreenWidth } from 'react-native-responsive-dimensions';
 import * as RNFS from 'react-native-fs'
+import axios from 'axios';
+import { HS_API_END_POINT } from '../../Shared/env';
+import { setJwt,setUserInfo } from '../Store/Actions';
+import { connect } from 'react-redux';
 
 
-const Item = ({ item, onPress, width, height,  }) => (
+const Item = ({ item, onPress, width, height,   }) => (
   <View style={{
         alignItems: 'center',
         height: width > height ? responsiveScreenHeight(37) : responsiveScreenHeight(25),
@@ -40,7 +44,7 @@ const Item = ({ item, onPress, width, height,  }) => (
     </View>
   );
   
-const BookShelfHome = ({navigation}) => {
+const BookShelfHome = ({navigation,user_info}) => {
     const {width, height} = useWindowDimensions();
     const [selectedId, setSelectedId] = useState(null);
     const [bookData, setBookData] = useState([]);
@@ -69,8 +73,12 @@ const BookShelfHome = ({navigation}) => {
         setRefreshing(true);
         var existKeys = bookData.map(data => "pdf_" + data.id);
         var existKeySet = new Set(existKeys);
-
+        axios.get(HS_API_END_POINT+"/book-purchase/info/book-list/"+ user_info.id)
+        .then(function(result){
+          console.log(result._requestId);
+        });
         var keys = await AsyncStorage.getAllKeys()
+        console.log(keys.filter(key => key.includes("pdf_")));
         keys = keys.filter(key => !existKeySet.has(key) && key.includes("pdf_"));
         
         addData(keys);
@@ -128,7 +136,9 @@ const BookShelfHome = ({navigation}) => {
     );
   };
 
-
+  const mapStateToProps = (state) => ({
+    user_info : state.userReducer.userObj
+  });
   const styles = StyleSheet.create({
     bookBox: {
         margin:'5%',
@@ -170,5 +180,20 @@ const BookShelfHome = ({navigation}) => {
 
 })
 
-export default BookShelfHome;
+export default connect(mapStateToProps)(BookShelfHome);
 
+// {"config": {"adapter": [Function xhrAdapter], "data": undefined, "headers": {"Accept": "application/json, text/plain, */*"}, 
+// "maxBodyLength": -1, "maxContentLength": -1, "method": "get", "timeout": 0, "transformRequest": [[Function transformRequest]], "transformResponse": [[Function transformResponse]], 
+// "transitional": {"clarifyTimeoutError": false, "forcedJSONParsing": true, "silentJSONParsing": true}, 
+// "url": "http://localhost:8080/book-purchase/info/book-list/1", "validateStatus": [Function validateStatus], "xsrfCookieName": "XSRF-TOKEN", "xsrfHeaderName": "X-XSRF-TOKEN"}, 
+//"data": {"data": [[Object], [Object]], "message": "success", "statusEnum": "OK"}, 
+//"headers": {"cache-control": "no-cache, no-store, max-age=0, must-revalidate", "connection": "keep-alive", "content-type": "application/json", "date": "Thu, 09 Dec 2021 12:50:44 GMT", "expires": "0", "keep-alive": "t
+//imeout=60", "pragma": "no-cache", "transfer-encoding": "Identity", "x-content-type-options": "nosniff", "x-frame-options": "DENY", "x-xss-protection": "1; mode=block"}, "request": {"DONE": 4, "HEADERS_RECEIVED": 2, "LOADING": 3, "OPENED": 1, "UNSENT": 0, "_aborted": false, "_cachedResponse": undefined, "_hasError": false, "_headers": {"accept": "application/json, text/plain, */*"}, "_incrementalEvents": false, "_lowerCaseResponseHeaders": 
+// {"cache-control": "no-cache, no-store, max-age=0, must-revalidate", "connection":
+//  "keep-alive", "content-type": "application/json", "date": "Thu, 09 Dec 2021 12:50:44 GMT", "expires"
+// : "0", "keep-alive": "timeout=60", "pragma": "no-cache", "transfer-encoding": "Identity", 
+// "x-content-type-options": "nosniff", "x-frame-options": "DENY", "x-xss-protection": "1; mode=block"}, 
+// "_method": "GET", 
+// "_perfKey": "network_XMLHttpRequest_http://localhost:8080/book-purchase/info/book-list/1", "_performanceLogger": 
+// {"_closed": false, "_extras": [Object], "_pointExtras": [Object], "_points": [Object], "_timespans": [Object]}, "_requestId": null,
+// "_response": "{\"statusEnum\":\"OK\",\"message\":\"success\",\"data\":[{\"id\":1,\"name\":\"The Three Kingdoms 만화 삼국지 세트 (한 번은 꼭 읽어야 할 동양 최고의 고전)\"
