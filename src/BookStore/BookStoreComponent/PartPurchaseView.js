@@ -37,7 +37,10 @@ const styles = StyleSheet.create({
 
     BookTitleTextStyle: {
         fontSize: responsiveScreenFontSize(1.2),
-        marginTop: '10%'
+        marginTop: '10%',
+        width: '85%',
+        textAlign: 'center',
+        fontWeight: '500'
     },
 
 
@@ -129,8 +132,11 @@ const getCircularReplacer = () => {
 
 
 const downloadBook = (item) => {
+    Toast.show({type: 'downloadToast', text1: "다운로드중입니다..", autoHide: false});
     downloadPdfBook(item).then(() => {
-        downloadPdfKeys(item.id);
+        downloadPdfKeys(item.id).then(res => {
+            Toast.show({type: 'downloadToast', text1: "다운로드가 완료되었습니다."})
+        });
     })
 }
 
@@ -143,6 +149,7 @@ function PartPurchaseView({selectedBook, pdfPurchaseInfo}) {
     const [byToc, setByToc] = useState(true);
     const [price ,setPrice] = useState(0);
     const [bookTocData, setBookTocData] = useState([]);
+    const [temp, setTemp] = useState(1);
 
     const base64Image = 'data:image/png;base64,' + selectedBook.bookCoverResource;
 
@@ -172,14 +179,46 @@ function PartPurchaseView({selectedBook, pdfPurchaseInfo}) {
                         borderColor: 'white',
                         color: 'white'
                     }}>{text1}</Text>
-                    <Pressable onPress={()=> downloadBook(selectedBook)}>
-                        <Text style={{
+            
+                    <Text 
+                        onPress={()=> downloadBook(selectedBook)}
+                        style={{
                                 fontSize: 16, 
                                 fontWeight: '600', 
                                 borderColor: '#C2CAFC',
                                 color: '#A4B0FB'
                         }}>다운로드</Text>
-                    </Pressable>
+            
+                </View>
+            </View>
+
+        ),
+
+        downloadToast: ({ text1, props }) => (
+            <View style={{
+                width: width * 0.81,
+                height: 48,
+                alignItems: 'center'
+            }}>
+                
+                <View style={{   
+                    width: '50%', 
+                    height: '100%', 
+                    backgroundColor: '#242528', 
+                    borderRadius: 8, 
+                    justifyContent: 'space-between', 
+                    alignItems: 'center',
+                    paddingHorizontal: 16,
+                    display: 'flex',
+                    flexDirection: 'row'
+                }}>
+                    {/* <LottieView source={require('../../Assets/json/bookdownload.json')} autoPlay loop /> */}
+                    <Text style={{
+                        fontSize: 16, 
+                        fontWeight: '400', 
+                        borderColor: 'white',
+                        color: 'white'
+                    }}>{text1}</Text>
                 </View>
             </View>
 
@@ -193,7 +232,6 @@ function PartPurchaseView({selectedBook, pdfPurchaseInfo}) {
 
     const purchaseButtonOnClick = () => {
         const formData = new FormData();
-        console.log(width * 0.9 * 0.5);
 
         let bookPurchaseDto = {
             'purchasePageList': pageArr
@@ -338,9 +376,17 @@ function PartPurchaseView({selectedBook, pdfPurchaseInfo}) {
             </View>
         );
     }
-
+    const tocInitialize = () => {
+        axios.get(`${HS_API_END_POINT}/book-purchase/book-toc/` + selectedBook.id)
+        .then((res)=> {
+            setBookTocData(res.data.data);
+        })
+        .catch((err)=> console.log(err));
+    }
 
     const sellByPage = () => {
+
+        
         setByToc(false)
         for(let i=0; i<=selectedBook.pdfPageCount; i++) {
             pageArr[i] = false;
@@ -350,6 +396,9 @@ function PartPurchaseView({selectedBook, pdfPurchaseInfo}) {
 
     };
     const sellByToc = () => {
+
+        tocInitialize();
+
         setByToc(true);
         for(let i=0; i<=selectedBook.pdfPageCount; i++) {
             pageArr[i] = false;
@@ -360,29 +409,23 @@ function PartPurchaseView({selectedBook, pdfPurchaseInfo}) {
     }
     const onChangeText = (select) => setText(select);
 
-    const savePage = async(toSave) => {
-        await AsyncStorage.setItem("@pagesBuy",JSON.stringify(toSave));
-    }
     const delPage = (key) =>{
         const newPages = {...pagesToBuy};
-
         const delValue = newPages[key].text;
         let newPageArr = [...pageArr];
-        console.log("delValue : "+delValue);
+
         const inputs = delValue.split(',').map(x => x.trim());
-        console.log("inputs: "+inputs);
         for(const x of inputs) {
             const pages = x.split('-');
             if(pages.length===1){
                 newPageArr[Number(pages[0])] = false;
-
             } else {
                 for(var i = Number(pages[0]); i<=Number(pages[1]);i++){
                     newPageArr[i]=false;
                 }
             }
         }
-        console.log("newPageArr: "+ newPageArr);
+        console.log("페이지 현황: "+ newPageArr);
         setPageArr(newPageArr);
 
         delete newPages[key];
@@ -432,29 +475,27 @@ function PartPurchaseView({selectedBook, pdfPurchaseInfo}) {
             // console.log("isDuplicatePage pages: " + pages);
             if(pages.length===1){ //5-10 이런 형식이 아닌 페이지 입력일 경우
                 if(pageArr[Number(pages[0])]){ // 해당 페이지가 있을 경우
-                    Alert.alert(pages[0]+" 쪽은 이미 포함되어있습니다!");
+                    Alert.alert(pages[0]+" 쪽은 이미 포함 되어있어요.");
+                    setText("");
+                    return false;
+                } else if(pdfPurchaseInfo.purchasePageList[Number(pages[0])]){
+                    Alert.alert(pages[0]+" 는 이미 구매한 페이지에요.");
                     setText("");
                     return false;
                 }
-                // if(pageArr.includes(pages[0])){
-                //     console.log("두번뜨나????");
-                //     Alert.alert(pages[0]+" 는 이미 포함되어있습니다!");
-                //     setText("");
-                //     return false;
-                // }
+           
             } else { //5-10 이런 형식이 들어왔을 경우 해당 범위 안에있는 모든 것을 검사해야한다.
                 for(var i = Number(pages[0]); i<=Number(pages[1]);i++){
                     if(pageArr[i]){
-                        Alert.alert(i+" 는 이미 포함되어있습니다!");
+                        Alert.alert(i+" 는 이미 포함 되어있어요.");
+                        setText("");
+                        return false;
+                    } else if(pdfPurchaseInfo.purchasePageList[Number(pages[0])]) {
+                        Alert.alert(i+" 는 이미 구매한 페이지에요.");
                         setText("");
                         return false;
                     }
-                    // if(pageArr.includes(String(i))){
-                    //     console.log("두번뜨나?");
-                    //     Alert.alert(i+" 는 이미 포함되어있습니다!");
-                    //     setText("");
-                    //     return false;
-                    // }
+               
                 }
             }
         }
@@ -465,50 +506,38 @@ function PartPurchaseView({selectedBook, pdfPurchaseInfo}) {
         console.log("pageArr:",pageArr);
         const inputs = text.split(',').map(x => x.trim());
         if(isValidPage(text)){ // 결과가 true 일때만 저장하는건데 -> true일때는 유효한 페이지형태 입력일 경우.
-            //여기서 이제 페이지가 포함되어있는지를 체크해줘야한다.
-            // setPageArr([]);
-            //console.log(isDuplicatePage(text));
+
             if(isDuplicatePage(text)){ // true 일때 -> 중복이 아닐경우
-                var temp=[...pageArr];
+                let temp=[...pageArr];
                 for(const x of inputs) {
                     const pages = x.split('-');
                     if (pages.length===1) {
                         temp[Number(pages[0])]=true;
-                        //temp = temp.concat(pages);
                     } else{
                         for(var i = Number(pages[0]); i<=Number(pages[1]);i++){
                             temp[i] = true;
-                            //temp = temp.concat(String(i));
                         }
                     }
                 }
-                console.log("temp:",temp);
+          
                 setPageArr(temp);
-                //const newPageArr = [...temp, ...pageArr];
-                //setPageArr(newPageArr);
-
-                //페이지가 포함되어있지 않으면 저장
+                console.log('페이지 현황: ' + temp);
                 const newPages = {
                     ...pagesToBuy, 
                     [Date.now()]: {text},
                 };
                 
                 setPagesToBuy(newPages);
-
             }
 
         }
 
         setText("");
+
     }
 
     React.useEffect(()=> {
-        axios.get(`${HS_API_END_POINT}/book-purchase/book-toc/` + selectedBook.id)
-            .then((res)=> {
-                setBookTocData(res.data.data);
-            })
-            .catch((err)=> console.log(err));
-
+        tocInitialize();
 
         for(let i=0; i<=selectedBook.pdfPageCount; i++) {
             pageArr[i] = false;
@@ -518,54 +547,49 @@ function PartPurchaseView({selectedBook, pdfPurchaseInfo}) {
         setPageArr(pageArr);
     },[])
 
+    React.useEffect(()=> {
+        priceCheck();
+    }, [pageArr])
 
 
     return (
         <View style={[
             styles.PartPurchaseViewStyle,
             {
-                height:  width > height ? '100%' : '60%',
-                
+                height:  width > height ? '100%' : '60%',  
             }
         ]}>
                      
-        
             <View style={styles.PartPurchaseLeftView}>
-                <Text style={styles.BookTitleTextStyle}> {selectedBook.name}</Text>
+                <Text style={styles.BookTitleTextStyle} numberOfLines={2}> {selectedBook.name}</Text>
 
-                <Pressable onPress={()=> setImageModalVisible(true)} style={{marginTop: '10%'}}> 
-                          
+                <Pressable onPress={()=> setImageModalVisible(true)} style={{marginTop: '10%'}}>               
                     <Image
                         resizeMode='cover'
                         style={{
                             height: width > height ? responsiveScreenHeight(45): responsiveScreenWidth(40),
                             width:  width > height ? responsiveScreenWidth(24): responsiveScreenHeight(20),
                             borderWidth: 1,
-                            borderColor: '#C2C2C2'
-                
-                            
+                            borderColor: '#C2C2C2'                           
                         }}
                         source={{
                             uri: base64Image
                         }}
                     
-                    ></Image>
+                   />
                 </Pressable>
                 <Text style={{
                     fontSize: responsiveScreenFontSize(1),
                     marginVertical: 5
                 }}> 미리보기 </Text>
-          
-                
-               
+                 
             </View>
  
                     
             <View style={styles.PartPurchaseRightView}>
-                {/* if (byToc){ */}
+
                 {byToc &&
                     <View 
-                        isVisible={byToc}
                         style={{
                         height: '100%',
                         borderWidth: 1,
@@ -573,18 +597,12 @@ function PartPurchaseView({selectedBook, pdfPurchaseInfo}) {
                     }}>
                         <View style={{
                             height: '80%',
-                        // borderWidth: 1
                         }}>
-                           
-                            
                                 <FlatList
                                     data={bookTocData}
                                     renderItem={({item,index})=> HierarchyDataRender(item, index)}
                                     keyExtractor={(item,index)=> item.id.toString()}
-                                >           
-                                </FlatList>
-                            
-                    
+                                />
                         </View>
                         <View style={styles.PriceInfoLayout}>
                             <View style={styles.PriceSecondLayout}>
@@ -628,7 +646,6 @@ function PartPurchaseView({selectedBook, pdfPurchaseInfo}) {
                                         }
                                     }}>
         
-                                    
                                 <Text 
                                     style={{
                                         fontSize: responsiveScreenFontSize(1),
@@ -643,7 +660,6 @@ function PartPurchaseView({selectedBook, pdfPurchaseInfo}) {
                 {/* ㅍㅔ이지별로 구매하기 */}
                 {!byToc &&
                     <View 
-                        isVisible={byToc}
                         style={{
                         height: '100%',
                         borderWidth: 1,
@@ -708,7 +724,10 @@ function PartPurchaseView({selectedBook, pdfPurchaseInfo}) {
                                         justifyContent:'center',
                                     }
                                 ]}
-                                    onPress={addPage}>
+                                    onPress={()=> {
+                                        addPage();
+                                    
+                                    }}>
                                 
                                     <Text 
                                         style={{
@@ -742,7 +761,10 @@ function PartPurchaseView({selectedBook, pdfPurchaseInfo}) {
                                         fontWeight:'500',
                                         fontSize:responsiveFontSize(0.9),
                                     }}>{pagesToBuy[key].text}</Text>
-                                    <TouchableOpacity onPress={() => delPage(key)}>
+                                    <TouchableOpacity onPress={() => {
+                                        delPage(key);
+                              
+                                    }}>
                                         <IconFeather name="x-square" size={20} color="red" />
                                     </TouchableOpacity>
                                 </View>

@@ -10,9 +10,9 @@ import Carousel from 'react-native-snap-carousel';
 import { TouchableOpacity } from 'react-native-gesture-handler';
 import {downloadPdfBook, downloadPdfKeys} from './Download/BookDownload'
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons'
-
 import { connect } from 'react-redux';
 import axios from 'axios';
+import Toast from 'react-native-toast-message';
 import { HS_API_END_POINT } from '../../Shared/env';
 import { getPDFBookPurchaseInfo } from '../../Store/Actions';
 
@@ -101,13 +101,15 @@ const styles = StyleSheet.create({
 
 
 const downloadBook = (item) => {
+    Toast.show({type: 'downloadToast', text1: "다운로드중입니다..", autoHide: false});
     downloadPdfBook(item).then(() => {
-        downloadPdfKeys(item.id);
+        downloadPdfKeys(item.id).then(res => {
+            Toast.show({type: 'downloadToast', text1: "다운로드가 완료되었습니다."})
+        });
     })
 }
 
 function DetailBook ({gotoSecond, selectedBookObj, selectedBookId, handlePDFPurchaseInfo}) {
-
     const carouselRef = useRef();
     const {width, height} = useWindowDimensions();
     const [enableDownload, setEnableDownload] = useState(true);
@@ -185,10 +187,11 @@ function DetailBook ({gotoSecond, selectedBookObj, selectedBookId, handlePDFPurc
                                     height: 2
                                 },
                                 shadowOpacity: 0.5,
-                                shadowRadius: 20
+                                shadowRadius: 30
                             }}>
                                 <Image
                                     resizeMode='cover'
+                                    
                                     style={{
                                         height: '100%',
                                         width: width > height ? responsiveScreenWidth(16) : responsiveScreenHeight(16),
@@ -347,6 +350,39 @@ function DetailBook ({gotoSecond, selectedBookObj, selectedBookId, handlePDFPurc
 
     }
 
+    const toastConfig = {
+            
+        downloadToast: ({ text1, props }) => (
+            <View style={{
+                width: width * 0.81,
+                height: 48,
+                alignItems: 'center'
+            }}>
+                
+                <View style={{   
+                    width: '50%', 
+                    height: '100%', 
+                    backgroundColor: '#242528', 
+                    borderRadius: 8, 
+                    justifyContent: 'space-between', 
+                    alignItems: 'center',
+                    paddingHorizontal: 16,
+                    display: 'flex',
+                    flexDirection: 'row'
+                }}>
+                    {/* <LottieView source={require('../../Assets/json/bookdownload.json')} autoPlay loop /> */}
+                    <Text style={{
+                        fontSize: 16, 
+                        fontWeight: '400', 
+                        borderColor: 'white',
+                        color: 'white'
+                    }}>{text1}</Text>
+                </View>
+            </View>
+
+        )
+    };
+
     React.useEffect(()=> {
         if(selectedBookObj[carouselRef.current.currentIndex].type === "pdf") {   
             onSnapToItem(selectedBookObj[carouselRef.current.currentIndex].id)
@@ -389,7 +425,7 @@ function DetailBook ({gotoSecond, selectedBookObj, selectedBookId, handlePDFPurc
                 
             
             />
-                                       
+            <Toast position='top' topOffset={5}  config={toastConfig}/>                   
         </View>
     );
 }
