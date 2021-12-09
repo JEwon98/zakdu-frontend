@@ -40,6 +40,7 @@ const getPageMap = (pages, realStartPage, totalPage) => {
             idx++;
         }
     }
+    console.log(pageMap);
     return pageMap;
 }
 

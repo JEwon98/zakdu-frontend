@@ -15,90 +15,7 @@ import axios from 'axios';
 import Toast from 'react-native-toast-message';
 import { HS_API_END_POINT } from '../../Shared/env';
 import { getPDFBookPurchaseInfo } from '../../Store/Actions';
-
-const BookDetailView = styled.ScrollView`
-    width: 90%;
-    height: 100%;
-    background-color: #ffffff;
-    border-radius: 15px;
-    border: solid #CBCACA;
-    margin: auto;
-`;
-
-const BookDetailTopHalf = styled.View`
-    width: 85%;
-    height: ${(props)=> props.width > props.height ? responsiveScreenHeight(40) : responsiveScreenWidth(40)}px;
-    display: flex;
-    flex-direction: row;
-    margin: 6% auto 0 auto;
-`;
-
-const BookDetailBottomHalf = styled.View`
-    width: 85%;
-    height: 50%;
-    margin: 6% auto;
-`;
-
-const styles = StyleSheet.create({
-    buyButton: {
-        backgroundColor: 'white',
-        borderRadius: 20,
-        borderWidth: 2,
-        width: '100%',
-        paddingVertical: 11,
-        paddingHorizontal: 13,      
-    },
-
-    buyButtonText: {
-        textAlign: 'center',
-        fontWeight: '500',
-        fontSize: responsiveScreenFontSize(0.7),
-        color: 'black'
-    },
-
-    buyButtonView: {
-        display: 'flex',
-        width: '100%',
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        position: 'absolute',
-        bottom: '7%',
-    },  
-
-    bookInfoCardView: {      
-        borderColor: 'gray',
-        borderRadius: 20, 
-        width: '100%',
-        height: '30%',
-        display: 'flex',
-        flexDirection: 'row',
-        alignItems: 'center'
-    },
-
-    bookInfoItem:{
-        paddingHorizontal: 5,
-        height: '100%',
-        width: '20%',
-        justifyContent: 'center'
-    },
-    bookInfoItemTitle:{
-        textAlign: 'center',
-        fontSize: responsiveScreenFontSize(0.6),
-        fontWeight: '600',
-        color: '#A6A6A6',
-    },
-    bookInfoContent: {
-  
-        fontSize: responsiveScreenFontSize(0.8),
-        fontWeight: '600',
-        marginTop: '5%',
-        textAlign: 'center'
-    }
-
-
-    
-})
-
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const downloadBook = (item) => {
     Toast.show({type: 'downloadToast', text1: "다운로드중입니다..", autoHide: false});
@@ -334,9 +251,13 @@ function DetailBook ({gotoSecond, selectedBookObj, selectedBookId, handlePDFPurc
         }
 
     
-    const onSnapToItem = (bookId) => {
-       // setEnableDownload(true);
-        axios.get(`${HS_API_END_POINT}/book-purchase/info/page/` + bookId + "/" + 1)
+    const onSnapToItem = async(bookId) => {
+        const token = await AsyncStorage.getItem('user_jwt')
+        axios.get(`${HS_API_END_POINT}/book-purchase/info/page/` + bookId, {
+            headers: {
+                'Authorization' : "Bearer " + token
+            }
+        })
         .then(res => {
             console.log(res.data.data);
             handlePDFPurchaseInfo("purchasePageList", res.data.data.purchasePageList);
@@ -344,7 +265,6 @@ function DetailBook ({gotoSecond, selectedBookObj, selectedBookId, handlePDFPurc
 
             if(res.data.data.pageCount != 0) 
                 setEnableDownload(false);
-
         })
         .catch(err => console.log(err));
 
@@ -439,3 +359,89 @@ const mapDispatchToProps = (dispatch) => ({
 
 
 export default connect(mapStateToProps, mapDispatchToProps)(DetailBook);
+
+
+
+const BookDetailView = styled.ScrollView`
+    width: 90%;
+    height: 100%;
+    background-color: #ffffff;
+    border-radius: 15px;
+    border: solid #CBCACA;
+    margin: auto;
+`;
+
+const BookDetailTopHalf = styled.View`
+    width: 85%;
+    height: ${(props)=> props.width > props.height ? responsiveScreenHeight(40) : responsiveScreenWidth(40)}px;
+    display: flex;
+    flex-direction: row;
+    margin: 6% auto 0 auto;
+`;
+
+const BookDetailBottomHalf = styled.View`
+    width: 85%;
+    height: 50%;
+    margin: 6% auto;
+`;
+
+const styles = StyleSheet.create({
+    buyButton: {
+        backgroundColor: 'white',
+        borderRadius: 20,
+        borderWidth: 2,
+        width: '100%',
+        paddingVertical: 11,
+        paddingHorizontal: 13,      
+    },
+
+    buyButtonText: {
+        textAlign: 'center',
+        fontWeight: '500',
+        fontSize: responsiveScreenFontSize(0.7),
+        color: 'black'
+    },
+
+    buyButtonView: {
+        display: 'flex',
+        width: '100%',
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        position: 'absolute',
+        bottom: '7%',
+    },  
+
+    bookInfoCardView: {      
+        borderColor: 'gray',
+        borderRadius: 20, 
+        width: '100%',
+        height: '30%',
+        display: 'flex',
+        flexDirection: 'row',
+        alignItems: 'center'
+    },
+
+    bookInfoItem:{
+        paddingHorizontal: 5,
+        height: '100%',
+        width: '20%',
+        justifyContent: 'center'
+    },
+    bookInfoItemTitle:{
+        textAlign: 'center',
+        fontSize: responsiveScreenFontSize(0.6),
+        fontWeight: '600',
+        color: '#A6A6A6',
+    },
+    bookInfoContent: {
+  
+        fontSize: responsiveScreenFontSize(0.8),
+        fontWeight: '600',
+        marginTop: '5%',
+        textAlign: 'center'
+    }
+
+
+    
+})
+

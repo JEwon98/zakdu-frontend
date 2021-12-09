@@ -9,6 +9,8 @@ import {
     SafeAreaView, 
     FlatList,Pressable, 
     useWindowDimensions,
+    TouchableOpacity,
+    TouchableWithoutFeedback
 
 } from 'react-native';
 import { responsiveScreenFontSize, responsiveScreenHeight, responsiveScreenWidth } from 'react-native-responsive-dimensions';
@@ -19,40 +21,76 @@ import { setJwt,setUserInfo } from '../Store/Actions';
 import { connect } from 'react-redux';
 
 
-const Item = ({ item, onPress, width, height,   }) => (
-  <View style={{
-        alignItems: 'center',
-        height: width > height ? responsiveScreenHeight(37) : responsiveScreenHeight(25),
-        flex: 0.25
-    }}>  
-      <Pressable onPress={onPress} style=
-          {({pressed}) => [
-            styles.pressItemStyle, 
-            {
-              padding: pressed ? 10 : 20,
-              width: width > height ? '75%' : '90%',     
-            }
-          ]}>
-
-            <Image 
-              resizeMode="cover" 
-              source={item.image}
-              style={styles.image} />
-               
-        </Pressable>
-        <Text numberOfLines={1} style={[styles.title]}>{item.title}</Text>
-    </View>
-  );
   
 const BookShelfHome = ({navigation,user_info}) => {
     const {width, height} = useWindowDimensions();
     const [selectedId, setSelectedId] = useState(null);
     const [bookData, setBookData] = useState([]);
     const [refreshing, setRefreshing] = useState(false);
+    const [removeButtonVisible, setRemoveButtonVisible] = useState(false);
     const numColumns = 4;
 
+    const Item = ({ item, onPress, width, height,}) => (
+      <View style={{
+            alignItems: 'center',
+            height: width > height ? responsiveScreenHeight(37) : responsiveScreenHeight(25),
+            flex: 0.25
+        }}>  
+          <Pressable onPress={onPress} style=
+              {({pressed}) => [
+                styles.pressItemStyle, 
+                {
+                  padding: pressed ? 10 : 20,
+                  width: width > height ? '75%' : '90%',     
+                }
+              ]}
+              onLongPress={() => setRemoveButtonVisible(!removeButtonVisible)}
+              >
+                {
+                  removeButtonVisible && <TouchableOpacity
+                    style={styles.removeButton}
+                    onPress={async () => {
+                      setBookData(bookData.filter(data => data.id !== item.id));
+                      const key = "pdf_" + item.id;
+                      const storageItem = JSON.parse(await AsyncStorage.getItem(key));
+                      console.log(storageItem);
+                      const filePath = RNFS.DocumentDirectoryPath + "/pdf/" + storageItem.fileName;
+                      const decFilePath = RNFS.TemporaryDirectoryPath + "pdf/" + storageItem.fileName + "_dec";
+                      const coverFilePath = RNFS.DocumentDirectoryPath + "/pdfCover" + storageItem.coverFileName;
+                      RNFS.exists(filePath).then((res) => {
+                        res && RNFS.unlink(filePath);
+                      });
+                      RNFS.exists(decFilePath).then((res) => {
+                        res && RNFS.unlink(decFilePath);
+                      });
+                      RNFS.exists(coverFilePath).then((res) => {
+                        res && RNFS.unlink(decFilePath);
+                      });
+                      AsyncStorage.removeItem(key);
+                      console.log(AsyncStorage.getAllKeys());
+                    }}>
+                      <Text style={{
+                        fontSize: responsiveScreenFontSize(0.8),
+                        fontWeight: '600',
+                        color: 'white',
+                        position: 'absolute',
+                        alignSelf: 'center',
+                        justifyContent: 'center',
+                      }}>X</Text>
+                  </TouchableOpacity>
+                }
+                <Image 
+                  resizeMode="cover" 
+                  source={item.image}
+                  style={styles.image} />
+                  
+            </Pressable>
+            <Text numberOfLines={1} style={[styles.title]}>{item.title}</Text>
+        </View>
+    );
+
     const renderItem = ({ item }) => {
-  
+      console.log(item);
       return (
         <Item
           item={item}
@@ -71,6 +109,7 @@ const BookShelfHome = ({navigation,user_info}) => {
 
     const refreshItems = async () => {
         setRefreshing(true);
+        removeButtonVisible && setRemoveButtonVisible(false);
         var existKeys = bookData.map(data => "pdf_" + data.id);
         var existKeySet = new Set(existKeys);
         axios.get(HS_API_END_POINT+"/book-purchase/info/book-list/"+ user_info.id)
@@ -111,27 +150,32 @@ const BookShelfHome = ({navigation,user_info}) => {
     return (
       <SafeAreaView style={styles.container}>
 
-        <View style={{alignItems: 'center', width: '100%', marginTop: '3%'}}>
-          <Text style={{
-            textAlign: 'left',
-            width: '90%',
-            marginBottom: '1%',
-            fontSize: responsiveScreenFontSize(1.5),
-            fontWeight: '600',
-    
-          }}>보관함 </Text>
-          <View style={{width: '90%', borderBottomWidth: 1, borderBottomColor: 'gray'}}/>
-        </View>
-        
-        <FlatList
-          data={bookData}
-          renderItem={renderItem}
-          refreshing={refreshing}
-          onRefresh={refreshItems}
-          keyExtractor={(item) => item.id}
-          extraData={selectedId}
-          numColumns={numColumns}
-        />
+          
+        <TouchableWithoutFeedback onPress={() => removeButtonVisible && setRemoveButtonVisible(false)}>
+          <View style={{alignItems: 'center', width: '100%', marginTop: '3%'}}>
+            <Text style={{
+              textAlign: 'left',
+              width: '90%',
+              marginBottom: '1%',
+              fontSize: responsiveScreenFontSize(1.5),
+              fontWeight: '600',
+              
+            }}>보관함 </Text>
+            <View style={{width: '90%', borderBottomWidth: 1, borderBottomColor: 'gray'}}/>
+          </View>
+        </TouchableWithoutFeedback>
+        <TouchableWithoutFeedback onPress={() => removeButtonVisible && setRemoveButtonVisible(false)}>
+          <FlatList
+            data={bookData}
+            renderItem={renderItem}
+            refreshing={refreshing}
+            onRefresh={refreshItems}
+            keyExtractor={(item) => item.id}
+            extraData={selectedId}
+            numColumns={numColumns}
+            />
+        </TouchableWithoutFeedback>
+
       </SafeAreaView>
     );
   };
@@ -176,7 +220,19 @@ const BookShelfHome = ({navigation,user_info}) => {
         overflow: 'hidden',
         fontSize: responsiveScreenFontSize(0.9)
     },
-
+    removeButton: {
+      width: 30,
+      height: 30,
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: 10,
+      borderRadius: 100,
+      backgroundColor: 'red',
+      position: 'absolute',
+      alignSelf: 'flex-end',
+      marginTop: 5,
+      zIndex: 10
+    }
 
 })
 

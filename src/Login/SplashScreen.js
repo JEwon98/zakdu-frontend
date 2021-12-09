@@ -31,22 +31,19 @@ const SplashScreen = ({navigation,handleUserInfo,user_info}) => {
         if(result == null){
           navigation.replace('Auth');
         } else{
-            console.log("result",result);
             await axios.get(`${HS_API_END_POINT}/user/my-info`,{
               headers: {
                 'Authorization' : "Bearer " + result
               }
             }).then(function(value){
-              console.log("result.data  ",value.data.username);
+              console.log("result.data  ",value.data);
               handleUserInfo(value.data);
               navigation.replace('BottomNav');
             })
             .catch(function(error){
               navigation.replace('Auth');
             });
-              //console.log("res: ",res);
         }
-        //navigation.replace(value === null ? 'Auth' : 'BottomNav');
       }
       );
     }, 1000);
