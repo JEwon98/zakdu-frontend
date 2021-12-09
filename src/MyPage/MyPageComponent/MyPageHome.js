@@ -21,7 +21,7 @@ function MyPageHome({navigation,user_info,user_email}) {
     // });
     console.log("user_name: ",user_info)
     const logOut = () => {
-        AsyncStorage.clear();
+        AsyncStorage.setItem('user_jwt',null);
         navigation.replace('Auth');
     }
     
@@ -51,7 +51,7 @@ function MyPageHome({navigation,user_info,user_email}) {
                 }}
             >
                 <Text style={{...styles.text, flex:1}}>잔여 포인트</Text>
-                <Text style={{...styles.text, flex:1, textAlign:'right', paddingRight:20}}>{point} P</Text>
+                <Text style={{...styles.text, flex:1, textAlign:'right', paddingRight:20}}>{user_info.point} P</Text>
             </TouchableOpacity>
             <TouchableOpacity
                 style={styles.innerView}

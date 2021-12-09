@@ -11,7 +11,7 @@ import axios from 'axios';
 import { HS_API_END_POINT } from '../../Shared/env';
 import Toast from 'react-native-toast-message';
 import { connect } from 'react-redux';
-import {downloadPdfBook, downloadPdfKeys} from '../../Store/Download/BookDownload'
+import {downloadPdfBook, downloadPdfKeys} from './Download/BookDownload'
 
 const styles = StyleSheet.create({
     PartPurchaseViewStyle: {
@@ -215,7 +215,7 @@ function PartPurchaseView({selectedBook, pdfPurchaseInfo}) {
     }
 
     const HierarchyDataRender = (item, index) => {
-
+        const realStartPage = selectedBook.realStartPage;
         if (!item.tick) {
             let flag = false;
             item.tick = false;
@@ -319,7 +319,7 @@ function PartPurchaseView({selectedBook, pdfPurchaseInfo}) {
                                     position: 'absolute',
                                     right: 0
                                 }}>
-                                    {item.startPage}
+                                    {item.startPage- realStartPage +1}
                                 </Text>
                             </View>
                         </View>
