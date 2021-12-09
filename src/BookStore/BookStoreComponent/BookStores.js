@@ -71,7 +71,7 @@ const styles = StyleSheet.create({
     }
 })
 
-function BookStores({navigation, handleBookObj, bookObj}) {
+function BookStores({navigation, handleBookObj, bookObj, user_info}) {
     const [detailBookVisible, setDetailBookVisible] = useState(false);
     const [partBookPurchaseVisible, setPartBookPurchaseVisible] = useState(false);
     const [selectedBook, setSelectedBook] = useState({});
@@ -88,6 +88,7 @@ function BookStores({navigation, handleBookObj, bookObj}) {
     const {width, height} = useWindowDimensions();
 
     const onRefresh = () => {
+        console.log(user_info.userType);
         setRefreshing(true);
         axios.get(`${HS_API_END_POINT}/book-purchase/book-list`)
                 .then((res)=> {      
@@ -460,34 +461,35 @@ function BookStores({navigation, handleBookObj, bookObj}) {
             </Modal>
         
         </ScrollView>
-        
-        <Pressable 
-            style={({pressed}) => [
-            {
-                backgroundColor: pressed ? '#121212' : 'black',
-            }, 
-            {
-                width: 70,
-                height: 70,
-                borderRadius: 50,
-                justifyContent: 'center',
-                alignItems:'center',
-                position: 'absolute',
-                bottom: 20,
-                right: 20
-            }]}
-            onPress={()=> {
-                navigation.push('BookRegister');
-            }}>
 
-        
-         <Text style={{
-             color: 'white',
-             fontSize: responsiveScreenFontSize(2),
-             textAlign: 'center',
-         }}>+</Text>
-        </Pressable>
-        
+        {user_info.userType === "ROLE_SELLER" &&
+            <Pressable 
+                style={({pressed}) => [
+                {
+                    backgroundColor: pressed ? '#121212' : 'black',
+                }, 
+                {
+                    width: 70,
+                    height: 70,
+                    borderRadius: 50,
+                    justifyContent: 'center',
+                    alignItems:'center',
+                    position: 'absolute',
+                    bottom: 20,
+                    right: 20
+                }]}
+                onPress={()=> {
+                    navigation.push('BookRegister');
+                }}>
+
+            
+                <Text style={{
+                    color: 'white',
+                    fontSize: responsiveScreenFontSize(2),
+                    textAlign: 'center',
+                }}>+</Text>
+            </Pressable>
+        }
 
         </View>
   
@@ -498,7 +500,8 @@ function BookStores({navigation, handleBookObj, bookObj}) {
 
 
 const mapStateToProps = (state) => ({
-    bookObj: state.getBooks.bookObj
+    bookObj: state.getBooks.bookObj,
+    user_info : state.userReducer.userObj
 });
 
 const mapDispatchToProps = (dispatch) => ({
